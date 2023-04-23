@@ -96,20 +96,81 @@ class poseDetector():
         found_frames = []
         one = 1
         zero = 0
+        condition = masked_image == (0,0, 255)
+        c = np.sum(condition.astype(int), 2)
+        c = np.where(c == 3, 1, 0)
+        # print(f"c: {np.sum(c)}")
+
+        # print(c.shape, c)
+        
         for i in range(1,len(list_names)+1):    
             img = cv2.imread('./data/frames_masked/masked' + str(i).zfill(3) + '.png')
-            condition = masked_image == (0,0, 255)
-            # print(condition)
-            a = img*condition
-            # print("                                              ",a)
-            if (a == [0,0,255]).any():
-                print("skipping image masked"+str(i).zfill(3) + '.png')
+            condition_img = img == (0,0, 255)
+            c_img = np.sum(condition_img.astype(int), 2)
+            c_img = np.where(c_img == 3, 1, 0)
+            # print(f"c_img: {np.sum(c_img)}")
+
+            # print(c_img.shape, c_img)
+            
+            result = np.sum(np.multiply(c, c_img))
+
+            if result > 0:
+                # print("skipping image masked"+str(i).zfill(3) + '.png')
                 found_frames.append(zero)
                 continue
             else:
-                print("                               found background in frame masked"+str(i).zfill(3) + '.png')
+                # print("                               found background in frame masked"+str(i).zfill(3) + '.png')
                 found_frames.append(one)
                 found_frames_list.append(i)
+
+            # mask1 = condition[:, :, 0].astype(int)
+            # print(mask1)
+            # print(condition)
+            # a = img*condition
+            # print("                                              ",a.reshape(-1).shape)
+            # condition2= img == (0,0,255)
+            # print(condition.shape, condition2.shape)
+            # combine = condition.all() and condition2.all()
+            # if combine.any() == True:
+            #     print("skipping image masked"+str(i).zfill(3) + '.png')
+            #     found_frames.append(zero)
+            #     continue
+            # else:
+            #     print("                               found background in frame masked"+str(i).zfill(3) + '.png')
+            #     found_frames.append(one)
+            #     found_frames_list.append(i)
+
+
+
+
+
+            # count = 0
+            # for i in range(img.shape[0]*img.shape[1]*img.shape[2]):
+            #     if (a.reshape(-1)[i] == [0,0,255]).all():
+            #         count +=1
+            # print(count)
+            
+                
+            # for l in range(a.shape[0]):
+            #     for k in range(a.shape[1]):
+            #         if (a[l][k] == [0,0,255]).all():
+            #             count +=1
+            #             # print("skipping image masked"+str(i).zfill(3) + '.png')
+            #             # found_frames.append(zero)
+            #             # continue
+            #         # else:
+            #             # print("                               found background in frame masked"+str(i).zfill(3) + '.png')
+            #             # found_frames.append(one)
+            #             # found_frames_list.append(i)
+            # print(count)
+            # if count ==0:
+            #     print("                               found background in frame masked"+str(i).zfill(3) + '.png')
+            #     found_frames.append(one)
+            #     found_frames_list.append(i)
+            # else:
+            #     print("skipping image masked"+str(i).zfill(3) + '.png')
+            #     found_frames.append(zero)
+
         return(found_frames, found_frames_list)
 
 
@@ -124,6 +185,32 @@ class poseDetector():
         Output
         1) filled_image: image with background filled in the region of interest
         '''
+        condition = image == (0,0, 255)
+        c = np.sum(condition.astype(int), 2)
+        c = np.where(c == 3, 1, 0)
+        print(c.shape)
+        cinv = np.where(c == 3, 0, 1)
+        c =np.stack((c,c,c), axis=-1)
+        print(c.shape)
+        cinv =np.stack((cinv,cinv,cinv), axis=-1)
+        image_without_target = image*cinv
+        image_without_target = image_without_target.astype(np.uint8)
+        list_bg_images =[]
+
+        j = frames_with_background[0]
+        img = cv2.imread('./data/frames_masked/masked' + str(j).zfill(3) + '.png')
+        filled_img = img*c
+        filled_img = filled_img.astype(np.uint8)
+        # for i in range(0,len(frames_with_background), 10):
+        #     print(i)
+        #     j = frames_with_background[i]
+        #     img = cv2.imread('./data/frames_masked/masked' + str(j).zfill(3) + '.png')
+        #     background_filled = img*c
+        #     list_bg_images.append(background_filled.astype(np.uint8))
+        # filled_img = np.mean(list_bg_images, axis=0).astype(np.uint8)
+        final_img = (filled_img+image_without_target).astype(np.uint8)
+        return final_img, image_without_target, list_bg_images, filled_img
+
         
     def findPosition(self, img, draw=True):
         self.lmList = []
@@ -174,35 +261,45 @@ def main():
         while True:
             success, img = cap.read()
             img, annotated_image, masked_image, masked_image_,masked_image_eroded, masked_image_black = detector.findPose(img)
-            # frames_list, frame_with_background = detector.find_frame_with_background(masked_image_eroded)
-            # print("###########################################################################################")
-            # print(frames_list, frame_with_background)
+            if i%50 == 0:   
+                print("getting frames for background ............")
+                frames_list, frame_with_background = detector.find_frame_with_background(masked_image_eroded)
+                print("##########################  number of background frames is  ###################################")
+                print( len(frame_with_background))
+                final_img, image_without_target, list_bg_images, filled_img = detector.fill_background(masked_image_eroded , frame_with_background)
+                cv2.imshow("filled image", final_img)
+                cv2.imshow("image without target", image_without_target)
+                cv2.imshow("filled_img", filled_img)
+                # cv2.imshow("list_bg_images", list_bg_images[0])
+                cv2.imwrite('./data/filled_background/filled' + str(i).zfill(3) + '.png', final_img)
+
             
             lmList = detector.findPosition(img, draw=False)
-            xlist = []
-            ylist = []
-            name = []
+            
             # print(lmList)
             
-            if len(lmList) != 0:
+            # if len(lmList) != 0:
 
-                header = [
-                            'masked'+ str(i).zfill(3) + '.png: ',
-                            '[' + str(lmList[0][1])  +', '+ str(int((lmList[11][1]+lmList[12][1])/2))    +', '+ str(lmList[12][1]) +', ' 
-                                + str(lmList[14][1]) +', '+ str(lmList[16][1]) +', '+ str(lmList[11][1]) +', '+ str(lmList[13][1]) +', ' 
-                                + str(lmList[15][1]) +', '+ str(lmList[24][1]) +', '+ str(lmList[26][1]) +', '+ str(lmList[28][1]) +', '
-                                + str(lmList[23][1]) +', '+ str(lmList[25][1]) +', '+ str(lmList[27][1]) +', '+ str(lmList[2][1])  +', '
-                                + str(lmList[5][1])  +', '+ str(lmList[7][1])  +', '+ str(lmList[8][1])  + ']: ',
-                            '[' + str(lmList[0][2])  +', '+ str(int((lmList[11][2]+lmList[12][2])/2))    +', '+ str(lmList[12][2]) +', ' 
-                                + str(lmList[14][2]) +', '+ str(lmList[16][2]) +', '+ str(lmList[11][2]) +', '+ str(lmList[13][2]) +', ' 
-                                + str(lmList[15][2]) +', '+ str(lmList[24][2]) +', '+ str(lmList[26][2]) +', '+ str(lmList[28][2]) +', '
-                                + str(lmList[23][2]) +', '+ str(lmList[25][2]) +', '+ str(lmList[27][2]) +', '+ str(lmList[2][2])  +', '
-                                + str(lmList[5][2])  +', '+ str(lmList[7][2])  +', '+ str(lmList[8][2])  + ']'  
-                            ]
+            #     header = [
+            #                 'masked'+ str(i).zfill(3) + '.png: ',
+            #                 '[' + str(lmList[0][1])  +', '+ str(int((lmList[11][1]+lmList[12][1])/2))    +', '+ str(lmList[12][1]) +', ' 
+            #                     + str(lmList[14][1]) +', '+ str(lmList[16][1]) +', '+ str(lmList[11][1]) +', '+ str(lmList[13][1]) +', ' 
+            #                     + str(lmList[15][1]) +', '+ str(lmList[24][1]) +', '+ str(lmList[26][1]) +', '+ str(lmList[28][1]) +', '
+            #                     + str(lmList[23][1]) +', '+ str(lmList[25][1]) +', '+ str(lmList[27][1]) +', '+ str(lmList[2][1])  +', '
+            #                     + str(lmList[5][1])  +', '+ str(lmList[7][1])  +', '+ str(lmList[8][1])  + ']: ',
+            #                 '[' + str(lmList[0][2])  +', '+ str(int((lmList[11][2]+lmList[12][2])/2))    +', '+ str(lmList[12][2]) +', ' 
+            #                     + str(lmList[14][2]) +', '+ str(lmList[16][2]) +', '+ str(lmList[11][2]) +', '+ str(lmList[13][2]) +', ' 
+            #                     + str(lmList[15][2]) +', '+ str(lmList[24][2]) +', '+ str(lmList[26][2]) +', '+ str(lmList[28][2]) +', '
+            #                     + str(lmList[23][2]) +', '+ str(lmList[25][2]) +', '+ str(lmList[27][2]) +', '+ str(lmList[2][2])  +', '
+            #                     + str(lmList[5][2])  +', '+ str(lmList[7][2])  +', '+ str(lmList[8][2])  + ']'  
+            #                 ]
 
                 # write the header
                 # writer.writerow(header)
-
+            '''
+                # xlist = []
+                # ylist = []
+                # name = []
                 # name.append("masked"+ str(i).zfill(3) + '.png')
                 # # nose
                 # xlist.append(lmList[0][1])
@@ -258,14 +355,16 @@ def main():
                 # #Rear
                 # xlist.append(lmList[8][1])
                 # ylist.append(lmList[8][2])
-
+            '''
 
 
 
 
 
                 # print(lmList[14])
-                # cv2.circle(img, (lmList[14][1], lmList[14][2]), 15, (0, 0, 255), cv2.FILLED)
+                # a = [0,11,12,14,16,13,15,24,26,28,23,25,27,2,5,7,8]
+                # for i in a:
+                #     cv2.circle(img, (lmList[i][1], lmList[i][2]), 5, (255, 0, 255), cv2.FILLED)
             # cTime = time.time()
             # fps = 1 / (cTime - pTime)
             # pTime = cTime
@@ -282,7 +381,7 @@ def main():
             # cv2.imwrite('./data/frames_masked/masked' + str(i).zfill(3) + '.png', masked_image_eroded)
             # cv2.imwrite('./data/frames_with_pose/annotated' + str(i).zfill(3) + '.png', annotated_image)
             # cv2.imwrite('./data/frames_all_pose/annotated' + str(i).zfill(3) + '.png', img)
-            cv2.imwrite('./data/frames_black_white/mask' + str(i).zfill(3) + '.png', masked_image_black)
+            # cv2.imwrite('./data/frames_black_white/mask' + str(i).zfill(3) + '.png', masked_image_black)
             i+=1
             cv2.waitKey(1)
 
