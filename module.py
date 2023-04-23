@@ -28,7 +28,7 @@ class poseDetector():
                                      self.min_tracking_confidence
                                      )
     
-    def findPose(self, img, draw=True):
+    def findPose(self, img, draw=False):
         BG_COLOR = (0, 0, 255)
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.results = self.pose.process(imgRGB)
@@ -65,18 +65,18 @@ class poseDetector():
         masked_image_eroded = np.where(masked_image_==255, masked_image, bg_image)
         # print(masked_image)
         # Draw pose landmarks on the image.
-        self.mpDraw.draw_landmarks(
-                                    annotated_image,
-                                    self.results.pose_landmarks,
-                                    self.mpPose.POSE_CONNECTIONS,
-                                    )
+        # self.mpDraw.draw_landmarks(
+        #                             annotated_image,
+        #                             self.results.pose_landmarks,
+        #                             self.mpPose.POSE_CONNECTIONS,
+        #                             )
         # cv2.imwrite('/tmp/annotated_image' + str(idx) + '.png', annotated_image)
         # Plot pose world landmarks.
         # self.mpDraw.plot_landmarks(
         #                             self.results.pose_world_landmarks, 
         #                             self.mpPose.POSE_CONNECTIONS
         #                             )
-        
+        # print(annotated_image.shape)
         
         return img, annotated_image, masked_image, masked_image_, masked_image_eroded, masked_image_black
     
@@ -214,15 +214,19 @@ class poseDetector():
         
     def findPosition(self, img, draw=True):
         self.lmList = []
+        self.cxlist =[]
+        self.cylist =[]
         if self.results.pose_landmarks:
             for id, lm in enumerate(self.results.pose_landmarks.landmark):
                 h, w, c = img.shape
                 # print(id, lm)
                 cx, cy = int(lm.x * w), int(lm.y * h)
                 self.lmList.append([id, cx, cy])
+                self.cxlist.append(cx)
+                self.cylist.append(cy)
                 if draw:
                     cv2.circle(img, (cx, cy), 5, (255, 0, 0), cv2.FILLED)
-        return self.lmList
+        return self.lmList, self.cxlist, self.cylist
     '''
     def findAngle(self, img, p1, p2, p3, draw=True):
         # Get the landmarks
@@ -261,21 +265,37 @@ def main():
         while True:
             success, img = cap.read()
             img, annotated_image, masked_image, masked_image_,masked_image_eroded, masked_image_black = detector.findPose(img)
-            if i%50 == 0:   
-                print("getting frames for background ............")
-                frames_list, frame_with_background = detector.find_frame_with_background(masked_image_eroded)
-                print("##########################  number of background frames is  ###################################")
-                print( len(frame_with_background))
-                final_img, image_without_target, list_bg_images, filled_img = detector.fill_background(masked_image_eroded , frame_with_background)
-                cv2.imshow("filled image", final_img)
-                cv2.imshow("image without target", image_without_target)
-                cv2.imshow("filled_img", filled_img)
-                # cv2.imshow("list_bg_images", list_bg_images[0])
-                cv2.imwrite('./data/filled_background/filled' + str(i).zfill(3) + '.png', final_img)
+            # if i%50 == 0:   
+            #     print("getting frames for background ............")
+            #     frames_list, frame_with_background = detector.find_frame_with_background(masked_image_eroded)
+            #     print("##########################  number of background frames is  ###################################")
+            #     print( len(frame_with_background))
+            #     final_img, image_without_target, list_bg_images, filled_img = detector.fill_background(masked_image_eroded , frame_with_background)
+            #     cv2.imshow("filled image", final_img)
+            #     cv2.imshow("image without target", image_without_target)
+            #     cv2.imshow("filled_img", filled_img)
+            #     # cv2.imshow("list_bg_images", list_bg_images[0])
+            #     cv2.imwrite('./data/filled_background/filled' + str(i).zfill(3) + '.png', final_img)
 
             
-            lmList = detector.findPosition(img, draw=False)
+            lmList, cxlist, cylist = detector.findPosition(img, draw=False)
+            print(lmList)
+            print(cxlist)
+            print(cylist)
             
+            min_x = min(cxlist)
+            max_x = max(cxlist)
+            min_y = min(cylist)
+            max_y = max(cylist)
+            
+            print(min_x)
+            print(min_y)
+            print(max_x)
+            print(max_y)
+            box = ()
+            
+            cropped_image = annotated_image[min_y-50:max_y+20,min_x-30:max_x+20,:]
+            # cropped_image = annotated_image[min_y:max_y][min_x:max_x][:]
             # print(lmList)
             
             # if len(lmList) != 0:
@@ -376,12 +396,14 @@ def main():
             # cv2.imshow("masked_image_", masked_image_)
             cv2.imshow("masked_image_eroded", masked_image_eroded)
             cv2.imshow("masked_image_black", masked_image_black)
+            cv2.imshow("cropped image", cropped_image)
 
 
             # cv2.imwrite('./data/frames_masked/masked' + str(i).zfill(3) + '.png', masked_image_eroded)
             # cv2.imwrite('./data/frames_with_pose/annotated' + str(i).zfill(3) + '.png', annotated_image)
             # cv2.imwrite('./data/frames_all_pose/annotated' + str(i).zfill(3) + '.png', img)
             # cv2.imwrite('./data/frames_black_white/mask' + str(i).zfill(3) + '.png', masked_image_black)
+            cv2.imwrite('./data/frames_cropped/cropped' + str(i).zfill(3) + '.png', cropped_image)
             i+=1
             cv2.waitKey(1)
 
