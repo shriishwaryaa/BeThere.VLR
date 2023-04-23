@@ -188,10 +188,10 @@ class poseDetector():
         condition = image == (0,0, 255)
         c = np.sum(condition.astype(int), 2)
         c = np.where(c == 3, 1, 0)
-        print(c.shape)
+        # print(c.shape)
         cinv = np.where(c == 3, 0, 1)
         c =np.stack((c,c,c), axis=-1)
-        print(c.shape)
+        # print(c.shape)
         cinv =np.stack((cinv,cinv,cinv), axis=-1)
         image_without_target = image*cinv
         image_without_target = image_without_target.astype(np.uint8)
@@ -253,6 +253,15 @@ class poseDetector():
                         cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
         return angle
     ''' 
+    def getpose(self, img, draw=True):
+        self.results = self.pose.process(img)
+        if self.results.pose_landmarks:
+            if draw:
+                self.mpDraw.draw_landmarks(img, 
+                                           self.results.pose_landmarks,
+                                           self.mpPose.POSE_CONNECTIONS)
+        return img
+
 def main():
     cap = cv2.VideoCapture('./data/IMG_1098.mp4')
     pTime = 0
@@ -264,7 +273,7 @@ def main():
     
         while True:
             success, img = cap.read()
-            img, annotated_image, masked_image, masked_image_,masked_image_eroded, masked_image_black = detector.findPose(img)
+            img1, annotated_image, masked_image, masked_image_,masked_image_eroded, masked_image_black = detector.findPose(img)
             # if i%50 == 0:   
             #     print("getting frames for background ............")
             #     frames_list, frame_with_background = detector.find_frame_with_background(masked_image_eroded)
@@ -278,25 +287,31 @@ def main():
             #     cv2.imwrite('./data/filled_background/filled' + str(i).zfill(3) + '.png', final_img)
 
             
-            lmList, cxlist, cylist = detector.findPosition(img, draw=False)
-            print(lmList)
-            print(cxlist)
-            print(cylist)
+            lmList, cxlist, cylist = detector.findPosition(img1, draw=False)
+            # print(lmList)
+            # print(cxlist)
+            # print(cylist)
             
             min_x = min(cxlist)
             max_x = max(cxlist)
             min_y = min(cylist)
             max_y = max(cylist)
             
-            print(min_x)
-            print(min_y)
-            print(max_x)
-            print(max_y)
-            box = ()
+            # print(min_x)
+            # print(min_y)
+            # print(max_x)
+            # print(max_y)
+            # box = ()
             
             cropped_image = annotated_image[min_y-50:max_y+20,min_x-30:max_x+20,:]
+            cropped_resised_img = cv2.resize(cropped_image, (176,256))
+            cropped_image_og = img[min_y-50:max_y+20,min_x-30:max_x+20,:]
+            cropped_resised_img_og = cv2.resize(cropped_image_og, (176,256))
+            # self.results = self.pose.process(imgRGB)
+            # cropimg, cropannotated_image, cropmasked_image, cropmasked_image_, cropmasked_image_eroded, cropmasked_image_black= detector.findPose(cropped_resised_img, draw=True)
             # cropped_image = annotated_image[min_y:max_y][min_x:max_x][:]
             # print(lmList)
+            # cropimg = detector.getpose(cropped_resised_img_og)
             
             # if len(lmList) != 0:
 
@@ -390,20 +405,26 @@ def main():
             # pTime = cTime
             # cv2.putText(img, str(int(fps)), (70, 50), cv2.FONT_HERSHEY_PLAIN, 3,
             #             (255, 0, 0), 3)
-            cv2.imshow("Image", img)
+            cv2.imshow("Image", img1)
             cv2.imshow("annotated_image", annotated_image)
             # cv2.imshow("masked_image", masked_image)
             # cv2.imshow("masked_image_", masked_image_)
             cv2.imshow("masked_image_eroded", masked_image_eroded)
             cv2.imshow("masked_image_black", masked_image_black)
             cv2.imshow("cropped image", cropped_image)
+            cv2.imshow("cropped resised image", cropped_resised_img)
+            # cv2.imshow("cropped image with pose", cropimg)
+            cv2.imshow("cropped resised image original", cropped_resised_img_og)
+            cv2.imshow("cropped image original", cropped_image_og)
 
 
             # cv2.imwrite('./data/frames_masked/masked' + str(i).zfill(3) + '.png', masked_image_eroded)
             # cv2.imwrite('./data/frames_with_pose/annotated' + str(i).zfill(3) + '.png', annotated_image)
             # cv2.imwrite('./data/frames_all_pose/annotated' + str(i).zfill(3) + '.png', img)
             # cv2.imwrite('./data/frames_black_white/mask' + str(i).zfill(3) + '.png', masked_image_black)
-            cv2.imwrite('./data/frames_cropped/cropped' + str(i).zfill(3) + '.png', cropped_image)
+            # cv2.imwrite('./data/frames_cropped/cropped' + str(i).zfill(3) + '.png', cropped_image)
+            cv2.imwrite('./data/frames_cropped_resised/cropped' + str(i).zfill(3) + '.png', cropped_resised_img)
+            cv2.imwrite('./data/frames_cropped_resised_originals/cropped_og' + str(i).zfill(3) + '.png', cropped_resised_img_og)
             i+=1
             cv2.waitKey(1)
 
