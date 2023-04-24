@@ -29,7 +29,7 @@ class poseDetector():
                                      )
     
     def findPose(self, img, draw=False):
-        BG_COLOR = (0, 0, 0)
+        BG_COLOR = (255, 255, 255)
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.results = self.pose.process(imgRGB)
         kernel = np.ones((5, 5), np.uint8)
