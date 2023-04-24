@@ -305,7 +305,17 @@ def main():
             
             cropped_image = annotated_image[min_y-50:max_y+20,min_x-30:max_x+20,:]
             cropped_resised_img = cv2.resize(cropped_image, (176,256))
+            # print(cropped_image.shape)
+            imgh = cropped_image.shape[0]
+            imgw = cropped_image.shape[1]
+            b = int((176*imgh - 256*imgw)/512 + 1)
+            a = int((256*(imgw + 2*b)/176 - imgh)/2)
+            padded_image = cv2.copyMakeBorder( cropped_image, a, a, b, b, cv2.BORDER_CONSTANT, value=(0,0,255) )
+            padded_resised_image = cv2.resize(padded_image, (176,256))
+            pimg1, pannotated_image, pmasked_image, pmasked_image_,pmasked_image_eroded, pmasked_image_black = detector.findPose(padded_resised_image, draw= True)
+            
             cropped_image_og = img[min_y-50:max_y+20,min_x-30:max_x+20,:]
+            
             cropped_resised_img_og = cv2.resize(cropped_image_og, (176,256))
             # self.results = self.pose.process(imgRGB)
             # cropimg, cropannotated_image, cropmasked_image, cropmasked_image_, cropmasked_image_eroded, cropmasked_image_black= detector.findPose(cropped_resised_img, draw=True)
@@ -416,6 +426,9 @@ def main():
             # cv2.imshow("cropped image with pose", cropimg)
             cv2.imshow("cropped resised image original", cropped_resised_img_og)
             cv2.imshow("cropped image original", cropped_image_og)
+            cv2.imshow("padded_image", padded_image)
+            cv2.imshow("padded_resised_image", padded_resised_image)
+            cv2.imshow("pimg1", pimg1)
 
 
             # cv2.imwrite('./data/frames_masked/masked' + str(i).zfill(3) + '.png', masked_image_eroded)
@@ -423,8 +436,8 @@ def main():
             # cv2.imwrite('./data/frames_all_pose/annotated' + str(i).zfill(3) + '.png', img)
             # cv2.imwrite('./data/frames_black_white/mask' + str(i).zfill(3) + '.png', masked_image_black)
             # cv2.imwrite('./data/frames_cropped/cropped' + str(i).zfill(3) + '.png', cropped_image)
-            cv2.imwrite('./data/frames_cropped_resised/cropped' + str(i).zfill(3) + '.png', cropped_resised_img)
-            cv2.imwrite('./data/frames_cropped_resised_originals/cropped_og' + str(i).zfill(3) + '.png', cropped_resised_img_og)
+            # cv2.imwrite('./data/frames_cropped_resised/cropped' + str(i).zfill(3) + '.png', cropped_resised_img)
+            # cv2.imwrite('./data/frames_cropped_resised_originals/cropped_og' + str(i).zfill(3) + '.png', cropped_resised_img_og)
             i+=1
             cv2.waitKey(1)
 
