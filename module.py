@@ -229,7 +229,7 @@ def main():
     cap = cv2.VideoCapture('./data/IMG_1098.mp4')
     pTime = 0
     detector = poseDetector()
-    i = 1
+    i = 0
     
     with open('./data/files/poseforgans.csv', 'w', encoding='UTF8') as f:
         writer = csv.writer(f)
@@ -248,10 +248,10 @@ def main():
             # cv2.imshow("masked_image_", masked_image_)
             # cv2.imshow("masked_image_eroded", masked_image_eroded)
             # cv2.imshow("masked_image_black", masked_image_black)
-            cv2.imshow("cropped resised image", cropped_resised_img)
+            # cv2.imshow("cropped resised image", cropped_resised_img)
 
 
-            # cv2.imwrite('./data/frames_masked/masked' + str(i).zfill(3) + '.png', masked_image_eroded)
+            cv2.imwrite('./data/original_cuts/' + str(i)+ '.jpg', img1)
             # cv2.imwrite('./data/frames_with_pose/annotated' + str(i).zfill(3) + '.png', annotated_image)
             # cv2.imwrite('./data/frames_all_pose/annotated' + str(i).zfill(3) + '.png', img)
             # cv2.imwrite('./data/frames_black_white/mask' + str(i).zfill(3) + '.png', masked_image_black)
