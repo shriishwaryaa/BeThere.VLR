@@ -48,11 +48,15 @@ from module import poseDetector
 #         return f"background: {self.background.shape}, result_person: {self.result_person.shape}, original_person: {self.original_person.shape}, filled_background: {self.filled_background.shape}"
 #     def 
 
-i = 1
+i = 0
 
 result_person_img = cv2.imread('./try_data_1/result_person/'+str(i)+'.jpg')
 original_person_img = cv2.imread('./try_data_1/original_person/'+str(i)+'.jpg')
 filled_background_img = cv2.imread('./try_data_1/filled_background/'+str(i)+'.jpg')
+print(f"./try_data_1/result_person/'{str(i)}'.jpg")
+cv2.imshow('result_person_img', result_person_img)
+cv2.imshow('original_person_img', original_person_img)
+cv2.imshow('filled_background_img', filled_background_img)
 
 detector = poseDetector()
 result_person_img1, result_person_annotated_image, result_person_masked_image, result_person_masked_image_,result_person_masked_image_eroded, result_person_masked_image_black = detector.findPose(result_person_img)
@@ -69,8 +73,22 @@ orig_l_ankle = original_person_lmList[27] # id, x, y
 result_r_ankle = result_person_lmList[28] # id, x, y
 result_l_ankle = result_person_lmList[27] # id, x, y
 
-final_img = np.where(result_person_masked_image_black == 0, filled_background_img, result_person_img1)
+final_img = np.where(result_person_masked_image_black == 0, original_person_img1, result_person_img1)
 cv2.imshow('final_img', final_img)
+final_img  = cv2.resize(final_img, (176//3, 256//3))
 
+import numpy as np
+import matplotlib.pyplot as plt
 
+from skimage import data
+from skimage.feature import match_template
 
+result = match_template(filled_background_img, final_img)
+ij = np.unravel_index(np.argmax(result), result.shape)
+_, x, y= ij[::-1]
+import ipdb; ipdb.set_trace()
+umm_img = filled_background_img
+cv2.circle(umm_img, (x, y), 10, (0, 0, 255), -1)
+cv2.imshow('umm_img', umm_img)
+
+cv2.waitKey(0)

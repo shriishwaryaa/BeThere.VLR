@@ -54,7 +54,7 @@ class poseDetector():
         # print(condition_masked)
         # condition_masked = cv2.erode(condition_masked, kernel, iterations=1)
         masked_image_eroded = cv2.erode(masked_image_, kernel, iterations=6)
-        masked_image_black = cv2.dilate(masked_image_black, kernel, iterations=6)
+        # masked_image_black = cv2.dilate(masked_image_black, kernel, iterations=6)
 
         
         bg_image = np.zeros(imgRGB.shape, dtype=np.uint8)
