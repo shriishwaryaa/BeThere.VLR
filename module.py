@@ -28,18 +28,27 @@ class poseDetector():
                                      self.min_tracking_confidence
                                      )
     
-    def findPose(self, img, draw=False):
+    def findPose(self, img, draw=False, a = 0):
+        # if a ==1:
+        #     cv2.imshow("img", img)
+        #     cv2.waitKey(0)
         BG_COLOR = (0, 0, 255)
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.results = self.pose.process(imgRGB)
         kernel = np.ones((5, 5), np.uint8)
         kernel_black = np.zeros((5, 5), np.uint8)
+        # print(draw)
+        # print(self.results.pose_landmarks)
+        # import ipdb; ipdb.set_trace()
         if self.results.pose_landmarks:
             if draw:
+                print("i am here")
                 self.mpDraw.draw_landmarks(img, 
                                            self.results.pose_landmarks,
                                            self.mpPose.POSE_CONNECTIONS)
-        
+        if a ==1:
+            cv2.imshow("img", img)
+            cv2.waitKey(0)
 
         annotated_image = img.copy()
         masked_image = img.copy()
@@ -261,6 +270,7 @@ class poseDetector():
                                            self.results.pose_landmarks,
                                            self.mpPose.POSE_CONNECTIONS)
         return img
+# def getpose(self, image, enablesegmentatio, draw):
 
 def main():
     cap = cv2.VideoCapture('./data/IMG_1098.mp4')
@@ -303,16 +313,19 @@ def main():
             # print(max_y)
             # box = ()
             
-            cropped_image = annotated_image[min_y-50:max_y+20,min_x-30:max_x+20,:]
+            cropped_image = img1[min_y-50:max_y+20,min_x-30:max_x+20,:]
             cropped_resised_img = cv2.resize(cropped_image, (176,256))
             # print(cropped_image.shape)
             imgh = cropped_image.shape[0]
             imgw = cropped_image.shape[1]
+            target_height = int(imgh*240/1440)
+            target_width = int(imgw*424/1920)
             b = int((176*imgh - 256*imgw)/512 + 1)
             a = int((256*(imgw + 2*b)/176 - imgh)/2)
             padded_image = cv2.copyMakeBorder( cropped_image, a, a, b, b, cv2.BORDER_CONSTANT, value=(0,0,255) )
             padded_resised_image = cv2.resize(padded_image, (176,256))
-            pimg1, pannotated_image, pmasked_image, pmasked_image_,pmasked_image_eroded, pmasked_image_black = detector.findPose(padded_resised_image, draw= True)
+            # import ipdb; ipdb.set_trace()
+            pimg1, pannotated_image, pmasked_image, pmasked_image_,pmasked_image_eroded, pmasked_image_black = detector.findPose(padded_resised_image, draw= True, a= 1)
             
             cropped_image_og = img[min_y-50:max_y+20,min_x-30:max_x+20,:]
             
@@ -428,7 +441,7 @@ def main():
             cv2.imshow("cropped image original", cropped_image_og)
             cv2.imshow("padded_image", padded_image)
             cv2.imshow("padded_resised_image", padded_resised_image)
-            cv2.imshow("pimg1", pimg1)
+            # cv2.imshow("pimg1", pimg1)
 
 
             # cv2.imwrite('./data/frames_masked/masked' + str(i).zfill(3) + '.png', masked_image_eroded)
@@ -439,7 +452,7 @@ def main():
             # cv2.imwrite('./data/frames_cropped_resised/cropped' + str(i).zfill(3) + '.png', cropped_resised_img)
             # cv2.imwrite('./data/frames_cropped_resised_originals/cropped_og' + str(i).zfill(3) + '.png', cropped_resised_img_og)
             i+=1
-            cv2.waitKey(1)
+            cv2.waitKey(0)
 
 if __name__ == "__main__":
     main()
